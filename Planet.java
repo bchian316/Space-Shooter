@@ -5,28 +5,30 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 
-public class Planet
-{
+public class Planet implements Drawable, CanAnimate{
 	private int x;
 	private int y;
-	private int width;
-	private int height;
-	private BufferedImage planetImg;
+	private static final int WIDTH = 50;
+	private static final int HEIGHT = 50;
+	private static BufferedImage planetImg;
 
-	public Planet() {
-		x = (int) (Math.random() * 798);
-		y = (int) (Math.random() * 598);
-		width = 50;
-		height = 50;
+	static {
 		try {
 			planetImg = ImageIO.read(new File("planet.png"));
 		} catch (IOException e) {}
 	}
 
+	public Planet() {
+		x = (int) (Math.random() * 798);
+		y = (int) (Math.random() * 598);
+	}
+
+    @Override
 	public void drawMe(Graphics g) {
-		g.drawImage(planetImg, x, y, width, height, null);
+		g.drawImage(planetImg, x, y, WIDTH, HEIGHT, null);
 	}
 	
+    @Override
 	public void animate() {
 		x--;
 		if (x < 0) {

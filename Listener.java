@@ -5,11 +5,18 @@ import java.util.Set;
 
 public class Listener implements KeyListener {
     private final Set<Integer> pressedKeys = new HashSet<>();
+    private final Screen s;
+
+    public Listener(Screen s) {
+        this.s = s;
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        //use this
-        System.out.println("keypressed");
+        //use for shooting
+        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            s.playerAttack();
+        }
         this.pressedKeys.add(e.getKeyCode());
     }
     

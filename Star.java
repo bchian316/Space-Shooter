@@ -2,7 +2,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 
-public class Star implements Drawable{
+public class Star implements Drawable, CanAnimate {
 	private int x;
 	private int y;
 	private final Color white = new Color(255, 255, 255);
@@ -18,6 +18,7 @@ public class Star implements Drawable{
 		g.fillRect(x, y, 3, 3);
 	}
 	
+    @Override
 	public void animate() {
 		x--;
 		if (x < 0) {

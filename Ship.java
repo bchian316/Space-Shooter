@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 
 public class Ship implements Drawable{
 	private static final int SPEED = 10;
+	private int lives = 3;
 	private int x = 50;
 	private int y = (int) (Math.random() * 520);
 	private int width = 100;
@@ -33,6 +34,7 @@ public class Ship implements Drawable{
 		if (pressedKeys.contains(KeyEvent.VK_DOWN)) {
 			this.moveDown();
 		}
+		
 	}
 	public void moveUp() {
 		if (y > 0) {
@@ -41,7 +43,7 @@ public class Ship implements Drawable{
 	}
 	
 	public void moveDown() {
-		if (y < 550) {
+		if (y < Runner.SCREENHEIGHT - this.height) {
 			y+=SPEED;
 		}
 	}
@@ -62,5 +64,20 @@ public class Ship implements Drawable{
 		return this.height;
 	}
 
+	public Projectile attack() {
+		return new Projectile(this.x + this.width / 2, this.y + this.height / 2);
+	}
+
+	public boolean isDead() {
+		return this.lives <= 0;
+	}
+
+	public void deductLife() {
+		this.lives--;
+	}
+
+	public int getLives() {
+		return this.lives;
+	}
 	
 }

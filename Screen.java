@@ -1,154 +1,205 @@
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.util.ArrayList;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
 public class Screen extends JPanel {
-	private final Listener listener = new Listener();
-	private final Star[] starList = new Star[100]; //can be array because stars never change
-	private Enemy[] enemyList = new Enemy[3];
+	private final Listener l = new Listener(this);
+	private final Star[] stars = new Star[100]; //can be array because stars never change
+	private final ArrayList<Enemy> enemies = new ArrayList<>();
 	private final Ship ship = new Ship();
-	private final Projectile[] projectileList = new Projectile[3];
-	private final Color black = new Color(0, 0, 0);
-	private final Planet[] planetList = new Planet[15];
+	private final ArrayList<Projectile> projectiles = new ArrayList<>();
+	private final Planet[] planets = new Planet[15];
 
-	private int level = 1;
-	private int lives = 3;
+	//formatting stuff
+	private static final Color BLACK = new Color(0, 0, 0);
+	private static final Color WHITE = new Color(255, 255, 255);
+	private static final Font FONT = new Font("Arial", Font.PLAIN, 50);
+
+	private int level = 0;
+	private final int NUM_LEVELS = 5;
+
+	private final Timer timer;
 
 	public Screen() {
 		super();
-		this.addKeyListener(listener);
-		for (int i = 0; i < starList.length; i++) {
-			starList[i] = new Star();
+		this.addKeyListener(this.l);
+		this.setFocusable(true);
+		this.requestFocusInWindow();
+
+		for (int i = 0; i < stars.length; i++) {
+			stars[i] = new Star();
 		}
-		for (int i = 0; i < planetList.length; i++) {
-			planetList[i] = new Planet();
+		for (int i = 0; i < planets.length; i++) {
+			planets[i] = new Planet();
 		}
-		for (int i = 0; i < enemyList.length; i++) {
-			int x = 800;
-			// (max -min +1) + min
-			int y = (int) (Math.random() * (600 - 50 + 1) + 50);
-			enemyList[i] = new Enemy(x, y, level);
-		}
+		goToNextLevel();
 
 
-		new Timer(30, _ -> this.animate()).start();
+		timer = new Timer(30, _ -> this.animate());
+		timer.start();
 	}
 
 	public void animate() {
-		if (this.level > 2) {
-			return;
-		}
 
-		ship.animate(listener.getPressedKeys());
+		animateShip();
 
-		for (Star star : starList) {
-			star.animate();
-		}
-		
-		for (Planet planet : planetList) {
-			planet.animate();
-		}
-		for (Projectile projectile : projectileList) {
-			if (projectile != null) {
-				projectile.moveRight();
-				if (projectile.x() >= 800) {
-					projectile.leftScreen();
-				}
-			}
-		}
+		animateCollection(stars);
+		animateCollection(planets);
+		animateCollection(projectiles);
+		animateCollection(enemies);
 
-		for (Projectile projectile : projectileList) {
-			if (projectile != null) {
-				for (Enemy enemy : enemyList) {
-					projectile.checkCollision(enemy);
-				}
-			}
-		}
-		
-		boolean cleared = true;
+		deleteProjectilesOutOfScreen();
+		checkIfEnemiesHitOrPassedPlayer();
+		checkIfProjectilesHitEnemies();
 
-		for (Enemy enemy : enemyList) {
-			enemy.move();
-			if (enemy.checkCollisionWithShip(ship)) {
-				this.lives -= 1;
-			}
-			if (enemy.x() <= 0) {
-				this.lives -= 1;
-				enemy.setX(800);
-			}
-			if (enemy.visible() == true) {
-				cleared = false;
-			}
-		} 
-		if (cleared) {
+		if (enemies.isEmpty()) {
 			goToNextLevel();
 		}
 
 		repaint();
+
+	}
+
+	public void animateShip() {
+		ship.animate(this.l.getPressedKeys());
+	}
 	
+	public void animateCollection(ArrayList<? extends CanAnimate> animatables) {
+		for (CanAnimate c : animatables) {
+			c.animate();
+		}
+	}
+
+	public void animateCollection(CanAnimate[] animatables) {
+		for (CanAnimate c : animatables) {
+			if (c != null) {
+				c.animate();
+			}
+		}
+	}
+	
+	public void deleteProjectilesOutOfScreen() {
+		for (int i = this.projectiles.size() - 1; i >= 0; i--) {
+			if (this.projectiles.get(i).isOutOfScreen()) {
+				this.projectiles.remove(i);
+			}
+		}
+	}
+
+	public void checkIfEnemiesHitOrPassedPlayer() {
+		//this deducts player lives
+		//2 ways of deducting lives: hit by enemy or enemy got past player
+		for (int i = this.enemies.size() - 1; i >= 0; i--) {
+			if (this.enemies.get(i).checkCollisionWithShip(ship) || this.enemies.get(i).passedPlayer()) {
+				this.enemies.remove(i);
+				this.ship.deductLife();
+			}
+		}
+	}
+
+	public void checkIfProjectilesHitEnemies() {
+		for (int i = this.projectiles.size() - 1; i >= 0; i--) {
+			//check each projectile with enemies
+			for (int j = this.enemies.size() - 1; j >= 0; j--) {
+				if (this.enemies.get(j).checkCollisionWithProjectile(this.projectiles.get(i))) {
+					this.projectiles.remove(i);
+					this.enemies.remove(j);
+					break;
+				}
+			}
+		}
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		g.setColor(black);
-		g.fillRect(0, 0, 800, 600);
-		for (Star star : starList) {
-			star.drawMe(g);
-		}
 
+		drawBackground(g);
+		drawShip(g);
+
+		drawCollection(stars, g);
 		if (level > 1) {
-			for (Planet planet : planetList) {
-				planet.drawMe(g);
-			}
+			drawCollection(planets, g);
 		}
-		ship.drawMe(g);
-		for (Projectile projectile : projectileList) {
-			if (projectile != null) {
-				projectile.drawMe(g);
-			}
-		}
+		drawCollection(projectiles, g);
 
-		for (Enemy enemy : enemyList) {
-			if (enemy != null) {
-				enemy.drawMe(g);	
-			}
+		drawCollection(enemies, g);
+
+		drawStats(g);
+		if (this.ship.isDead()) {
+			drawLose(g);
 		}
-		Color white = new Color(255, 255, 255);
-		g.setColor(white);
-		Font font = new Font("Arial", Font.PLAIN, 50); 
-		g.setFont(font);
-		g.drawString("Level : " + this.level, 400, 50);
-		g.drawString("Lives : " + this.lives, 100, 50);
-		if (lives < 1) {
-			this.lives = 3;
-			this.level = 0;
-			goToNextLevel();
+		if (level > NUM_LEVELS) {
+			drawWin(g);
 		}
-		if (level > 2) {
-			g.setColor(black);
-			g.fillRect(0, 0, 800, 600);
-			g.setColor(white);
-			g.setFont(font);
-			g.drawString("GAME OVER YOU WON", 50, 300);
+	}
+	
+	public void drawBackground(Graphics g) {
+		g.setColor(BLACK);
+		g.fillRect(0, 0, Runner.SCREENWIDTH, Runner.SCREENHEIGHT);
+	}
+
+	public void drawShip(Graphics g) {
+		ship.drawMe(g);
+	}
+	
+	public void drawCollection(ArrayList<? extends Drawable> drawables, Graphics g) {
+		for (Drawable c : drawables) {
+			c.drawMe(g);
 		}
 	}
 
-
-	public void goToNextLevel() {
-		this.level += 1;
-		if (this.level < 3) {
-			enemyList = new Enemy[level*3];
-				for (int i = 0; i < enemyList.length; i++) {
-					int x = 800;
-					// (max -min +1) + min
-					int y = (int) (Math.random() * (600 - 50 + 1) + 50);
-					enemyList[i] = new Enemy(x, y, level*2);
-				}
+	public void drawCollection(Drawable[] drawables, Graphics g) {
+		for (Drawable c : drawables) {
+			if (c != null) {
+				c.drawMe(g);
+			}
 		}
-				
+	}
+
+	public void drawStats(Graphics g) {
+		g.setColor(WHITE);
+		g.setFont(FONT);
+		g.drawString("Level : " + this.level, 400, 50);
+		g.drawString("Lives : " + this.ship.getLives(), 100, 50);
+	}
+
+	public void drawLose(Graphics g) {
+		g.setColor(BLACK);
+		g.fillRect(0, 0, Runner.SCREENWIDTH, Runner.SCREENHEIGHT);
+		g.setColor(WHITE);
+		g.setFont(FONT);
+		g.drawString("U LOSE", 50, 300);
+		timer.stop();
+	}
+
+	public void drawWin(Graphics g) {
+		g.setColor(BLACK);
+		g.fillRect(0, 0, Runner.SCREENWIDTH, Runner.SCREENHEIGHT);
+		g.setColor(WHITE);
+		g.setFont(FONT);
+		g.drawString("GAME OVER YOU WON", 50, 300);
+		timer.stop();
+	}
+
+	private void goToNextLevel() {
+		this.level += 1;
+		if (this.level <= NUM_LEVELS) {
+			for (int i = 0; i < level * 3; i++) {
+				int x = Runner.SCREENWIDTH + 70;
+				// (max -min +1) + min
+				int y = (int) (Math.random() * (Runner.SCREENHEIGHT - 50));
+				enemies.add(new Enemy(x, y, level));
+			}
+		}
+
+	}
+	
+	public void playerAttack() {
+		this.projectiles.add(this.ship.attack());
 	}
 
 }
