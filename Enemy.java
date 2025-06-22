@@ -78,12 +78,12 @@ public class Enemy implements Drawable, CanAnimate {
 		this.x = newX;
 	}
 	
-	public boolean checkCollisionWithShip(Ship ship) {
+	public boolean collidedWithShip(Ship ship) {
 		return this.x + this.width >= ship.x() && this.x <= ship.x() + ship.width() && this.y + this.height >= ship.y()
                         && this.y <= ship.y() + ship.height();
 	}
 	
-	public boolean checkCollisionWithProjectile(Projectile p) {
+	public boolean collidedWithProjectile(Projectile p) {
 		return this.x + this.width >= p.x() && this.x <= p.x() + p.width() && this.y + this.height >= p.y()
                         && this.y <= p.y() + p.height();
 	}

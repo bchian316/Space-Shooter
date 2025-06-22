@@ -19,7 +19,7 @@ public class Screen extends JPanel {
 	private static final Font FONT = new Font("Arial", Font.PLAIN, 50);
 
 	private int level = 0;
-	private final int NUM_LEVELS = 5;
+	private final int NUM_LEVELS = 10;
 
 	private final Timer timer;
 
@@ -93,7 +93,7 @@ public class Screen extends JPanel {
 		//this deducts player lives
 		//2 ways of deducting lives: hit by enemy or enemy got past player
 		for (int i = this.enemies.size() - 1; i >= 0; i--) {
-			if (this.enemies.get(i).checkCollisionWithShip(ship) || this.enemies.get(i).passedPlayer()) {
+			if (this.enemies.get(i).collidedWithShip(ship) || this.enemies.get(i).passedPlayer()) {
 				this.enemies.remove(i);
 				this.ship.deductLife();
 			}
@@ -104,7 +104,7 @@ public class Screen extends JPanel {
 		for (int i = this.projectiles.size() - 1; i >= 0; i--) {
 			//check each projectile with enemies
 			for (int j = this.enemies.size() - 1; j >= 0; j--) {
-				if (this.enemies.get(j).checkCollisionWithProjectile(this.projectiles.get(i))) {
+				if (this.enemies.get(j).collidedWithProjectile(this.projectiles.get(i))) {
 					this.projectiles.remove(i);
 					this.enemies.remove(j);
 					break;
@@ -121,9 +121,10 @@ public class Screen extends JPanel {
 		drawShip(g);
 
 		drawCollection(stars, g);
-		if (level > 1) {
+		if (level > 5) {
 			drawCollection(planets, g);
 		}
+
 		drawCollection(projectiles, g);
 
 		drawCollection(enemies, g);
@@ -147,15 +148,15 @@ public class Screen extends JPanel {
 	}
 	
 	public void drawCollection(ArrayList<? extends Drawable> drawables, Graphics g) {
-		for (Drawable c : drawables) {
-			c.drawMe(g);
+		for (Drawable d : drawables) {
+			d.drawMe(g);
 		}
 	}
 
 	public void drawCollection(Drawable[] drawables, Graphics g) {
-		for (Drawable c : drawables) {
-			if (c != null) {
-				c.drawMe(g);
+		for (Drawable d : drawables) {
+			if (d != null) {
+				d.drawMe(g);
 			}
 		}
 	}
